@@ -12,6 +12,7 @@ import (
 
 	"github.com/o0n1x/aggreGator/internal/config"
 	"github.com/o0n1x/aggreGator/internal/database"
+	"github.com/o0n1x/aggreGator/internal/rss"
 )
 
 type State struct {
@@ -94,6 +95,16 @@ func HandlerUsers(s *State, cmd Command) error {
 		}
 		fmt.Printf("\n")
 	}
+	return nil
+}
+
+func HandlerAgg(s *State, cmd Command) error {
+	rss, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if err != nil {
+		fmt.Printf("Error retrieving RSS feed: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("%v\n", rss)
 	return nil
 }
 

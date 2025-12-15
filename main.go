@@ -40,6 +40,7 @@ func main() {
 	commands.Register("register", cli.HandlerRegister)
 	commands.Register("reset", cli.HandlerReset)
 	commands.Register("users", cli.HandlerUsers)
+	commands.Register("agg", cli.HandlerAgg)
 
 	//command executing
 	if len(os.Args) < 2 {
