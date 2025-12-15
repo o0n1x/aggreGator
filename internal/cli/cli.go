@@ -137,6 +137,24 @@ func HandlerAgg(s *State, cmd Command) error {
 	return nil
 }
 
+func HandlerFeeds(s *State, cmd Command) error {
+	feeds, err := s.DB.GetFeeds(context.Background())
+	if err != nil {
+		fmt.Printf("Error retrieving feeds: %v\n", err)
+		os.Exit(1)
+	}
+
+	for _, feed := range feeds {
+		user, err := s.DB.GetUserByID(context.Background(), feed.UserID.UUID)
+		if err != nil {
+			fmt.Printf("Error feed fetching, User with id %v does not exist\n", feed.UserID.UUID)
+			os.Exit(1)
+		}
+		fmt.Printf("* Name: %v\n  URL: %v\n  User: %v\n", feed.Name.String, feed.Url.String, user.Name)
+	}
+	return nil
+}
+
 func (c *Commands) Run(s *State, cmd Command) error {
 	err := c.Commands[cmd.Name](s, cmd)
 	if err != nil {
