@@ -189,6 +189,30 @@ func HandlerFollow(s *State, cmd Command, user database.User) error {
 
 }
 
+func HandlerUnfollow(s *State, cmd Command, user database.User) error {
+	if len(cmd.Args) < 1 {
+		return errors.New("expected arg 'url' but was not found")
+	}
+	url := cmd.Args[0]
+
+	feed, err := s.DB.GetFeedByURL(context.Background(), sql.NullString{String: url, Valid: true})
+	if err != nil {
+		fmt.Printf("Error unfollowing, feed with url: %v does not exist\n", url)
+		os.Exit(1)
+	}
+
+	err = s.DB.DeleteFeedFollow(context.Background(), database.DeleteFeedFollowParams{
+		UserID: uuid.NullUUID{UUID: user.ID, Valid: true},
+		FeedID: uuid.NullUUID{UUID: feed.ID, Valid: true},
+	})
+	if err != nil {
+		fmt.Printf("DB Error for unfollowing,\nError: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("%v successfully unfollowed %v\n", user.Name, feed.Name)
+	return nil
+}
+
 func HandlerFollowing(s *State, cmd Command, user database.User) error {
 
 	feeds, err := s.DB.GetFeedFollowsForUser(context.Background(), uuid.NullUUID{UUID: user.ID, Valid: true})
