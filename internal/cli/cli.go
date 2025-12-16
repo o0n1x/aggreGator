@@ -134,13 +134,62 @@ func HandlerUsers(s *State, cmd Command) error {
 }
 
 func HandlerAgg(s *State, cmd Command) error {
-	rss, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if len(cmd.Args) < 1 {
+		return errors.New("expected arg 'time_between_reqs' but was not found")
+	}
+	duration_text := cmd.Args[0]
+
+	duration, err := time.ParseDuration(duration_text)
+	if err != nil {
+		fmt.Printf("Error parsing time %v: %v\n", duration_text, err)
+		os.Exit(1)
+	}
+
+	//TODO not taking advantage of decoupled time checking for concurrent scraping
+	ticker := time.NewTicker(duration)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s, duration)
+	}
+
+}
+
+func scrapeFeeds(s *State, duration time.Duration) {
+	nextfeed, err := s.DB.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		fmt.Printf("Error fetching next feed. Maybe there is no feed to scrape.")
+		os.Exit(1)
+	}
+	if nextfeed.LastFetchedAt.Time.Add(duration).After(time.Now()) {
+		fmt.Printf("No Feed to fetch yet.")
+		os.Exit(1)
+	}
+	err = s.DB.MarkFeedFetched(context.Background(), database.MarkFeedFetchedParams{
+		ID:        nextfeed.ID,
+		UpdatedAt: sql.NullTime{Time: time.Now(), Valid: true},
+	})
+	if err != nil {
+		fmt.Printf("Error marking feed %v , Error: %v.\n", nextfeed.Url, err)
+		os.Exit(1)
+	}
+
+	rss, err := rss.FetchFeed(context.Background(), nextfeed.Url.String)
+	fmt.Printf("Fetched from %v\n", nextfeed.Name)
 	if err != nil {
 		fmt.Printf("Error retrieving RSS feed: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("%v\n", rss)
-	return nil
+
+	//printing rss
+	fmt.Printf("Channel Title: %v\n", rss.Channel.Title)
+	//fmt.Printf("Channel Description:\n%v\n",rss.Channel.Description)
+	fmt.Printf("Feeds:\n\n")
+	for _, rssitem := range rss.Channel.Item {
+		fmt.Printf("Feed Title: %v\n", rssitem.Title)
+		fmt.Printf("Feed Publish Date: %v\n", rssitem.PubDate)
+		//fmt.Printf("\n%v\n\n",rssitem.Description)
+
+	}
+
 }
 
 func HandlerFeeds(s *State, cmd Command) error {
