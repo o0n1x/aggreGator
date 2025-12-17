@@ -3,7 +3,7 @@
 
 Gator is a cli RSS aggregator. it uses PostGresSQL and Go to aggregate RSS feeds and store them for future browsing via CLI.
 
-# Installation and Usage:
+# Installation:
 
 ### requirements setup:
 
@@ -79,7 +79,7 @@ open the config file and paste the following
 ```
 change 'username' to the name that you chose for postgresSQL (by default its postgres)
 
-### Usage:
+# Usage:
 
 gator is a CLI tool and its usage is as follows
 
